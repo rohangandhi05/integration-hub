@@ -1,0 +1,29 @@
+{
+  "name": "integration-gateway",
+  "version": "1.0.0",
+  "description": "GraphQL + REST API Gateway with API key auth and PGP signing",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.10.0",
+    "@azure/service-bus": "^7.9.4",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "graphql": "^16.8.1",
+    "graphql-tag": "^2.12.6",
+    "graphql-tag": "^2.12.6",
+    "node-fetch": "^2.7.0",
+    "openpgp": "^5.11.1",
+    "pg": "^8.11.3",
+    "uuid": "^9.0.0",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

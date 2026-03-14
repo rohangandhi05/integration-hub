@@ -1,0 +1,93 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: integrations
+      POSTGRES_USER: hub
+      POSTGRES_PASSWORD: localdev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hub -d integrations"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mock-hr:
+    build: ./mock-hr
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mock-payroll:
+    build: ./mock-payroll
+    ports:
+      - "3002:3002"
+    environment:
+      PORT: 3002
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  transformer:
+    build: ./transformer
+    environment:
+      DATABASE_URL: postgresql://hub:localdev@postgres:5432/integrations
+      MOCK_HR_URL: http://mock-hr:3001
+      MOCK_PAYROLL_URL: http://mock-payroll:3002
+      AZURE_SB_CONNECTION_STRING: ${AZURE_SB_CONNECTION_STRING:-}
+      HR_QUEUE_NAME: ${HR_QUEUE_NAME:-hr-events}
+      PAYROLL_QUEUE_NAME: ${PAYROLL_QUEUE_NAME:-payroll-events}
+      PGP_PASSPHRASE: ${PGP_PASSPHRASE:-localdev-passphrase}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - pgp_keys:/app/keys
+
+  gateway:
+    build: ./gateway
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://hub:localdev@postgres:5432/integrations
+      MOCK_HR_URL: http://mock-hr:3001
+      MOCK_PAYROLL_URL: http://mock-payroll:3002
+      AZURE_SB_CONNECTION_STRING: ${AZURE_SB_CONNECTION_STRING:-}
+      HR_QUEUE_NAME: ${HR_QUEUE_NAME:-hr-events}
+      PAYROLL_QUEUE_NAME: ${PAYROLL_QUEUE_NAME:-payroll-events}
+      API_KEYS: ${API_KEYS:-dev-key-1234,test-key-5678}
+      PGP_PASSPHRASE: ${PGP_PASSPHRASE:-localdev-passphrase}
+      NODE_ENV: ${NODE_ENV:-development}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mock-hr:
+        condition: service_healthy
+      mock-payroll:
+        condition: service_healthy
+    volumes:
+      - pgp_keys:/app/keys
+
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "5173:80"
+    environment:
+      VITE_GATEWAY_URL: http://localhost:3000
+
+volumes:
+  pgdata:
+  pgp_keys:
