@@ -1,3 +1,7 @@
+# Demo 
+
+https://github.com/user-attachments/assets/a4f9ad74-a4fa-404b-8ab1-75984a07e246 
+
 # Enterprise Integration Hub
 
 Middleware integration broker connecting a mock HR system (XML) and mock payroll (JSON) via Azure Service Bus — with a GraphQL/REST gateway, PGP signing, dead-letter recovery, and a React dashboard.
